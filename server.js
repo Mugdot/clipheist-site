@@ -8,7 +8,10 @@ const crypto = require('crypto');
 try { process.loadEnvFile(path.join(__dirname, '.env')); } catch {}
 
 const PORT = +process.env.PORT || 3000;
-const BASE_URL = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+// On Render the public address is provided automatically as RENDER_EXTERNAL_URL.
+const BASE_URL = (process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+// Public landing page (e.g. the GitHub Pages site). Buyers who cancel checkout are sent back here.
+const SITE_URL = (process.env.SITE_URL || BASE_URL).replace(/\/$/, '');
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '';
 const SECRET = process.env.DOWNLOAD_SECRET || '';
 const INSTALLER_URL = process.env.INSTALLER_URL || ''; // optional: installer hosted elsewhere (e.g. a GitHub release)
@@ -199,7 +202,7 @@ const server = http.createServer(async (req, res) => {
         'line_items[0][price_data][unit_amount]': String(PRICE_PENCE),
         'line_items[0][price_data][product_data][name]': 'ClipHeist for Windows (one-time purchase)',
         success_url: `${BASE_URL}/thanks?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${BASE_URL}/#buy`,
+        cancel_url: `${SITE_URL}/#buy`,
         'metadata[immediate_supply_consent]': new Date().toISOString(),
         // Standard Stripe checkout: you are the seller and your own refund terms apply.
         // (Stripe 'Managed Payments' is on by default for this account; it needs a product tax code and uses Stripe's own refund rules.)

@@ -1,0 +1,31 @@
+# One-click deploy for Render: https://render.com/deploy?repo=https://github.com/Mugdot/clipheist-site
+services:
+  - type: web
+    name: clipheist-site
+    runtime: node
+    plan: free
+    buildCommand: echo "no build step"
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SITE_URL
+        value: https://mugdot.github.io/clipheist
+      - key: INSTALLER_URL
+        value: https://github.com/Mugdot/clipheist-download/releases/latest/download/ClipHeist-Setup.exe
+      - key: MAX_DEVICES
+        value: "2"
+      # Secrets: Render asks you to type these in when you deploy. Copy them from your local .env file.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: DOWNLOAD_SECRET
+        sync: false
+      - key: LICENSE_PRIVATE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
