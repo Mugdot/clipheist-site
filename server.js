@@ -25,7 +25,9 @@ const EMAIL_API = process.env.EMAIL_API_URL || 'https://api.resend.com/emails';
 const LICENSE_PRIVATE_KEY = process.env.LICENSE_PRIVATE_KEY || '';
 const MAX_DEVICES = +process.env.MAX_DEVICES || 2;
 const DATA_DIR = path.join(__dirname, 'data');
-const emailReady = () => !!(EMAIL_KEY && EMAIL_FROM);
+const BREVO_KEY = process.env.BREVO_API_KEY || '';
+const BREVO_API = process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email';
+const emailReady = () => !!((EMAIL_KEY || BREVO_KEY) && EMAIL_FROM);
 const PUBLIC = path.join(__dirname, 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
 
@@ -109,6 +111,36 @@ function limited(ip) {
 const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // Emails the buyer their personal download link. Safe to call more than once per order.
+// Sends one email through whichever provider is configured. Both work over HTTPS
+// (plain SMTP is blocked on many free hosts).
+//  - Brevo:  BREVO_API_KEY  (no domain needed: verify a single sender address, e.g. a Gmail)
+//  - Resend: RESEND_API_KEY (needs a domain you own)
+async function sendEmail({ to, subject, text, html, idempotencyKey }) {
+  const m = /^\s*(.*?)\s*<([^>]+)>\s*$/.exec(EMAIL_FROM);
+  const fromName = m ? m[1] || 'ClipHeist' : 'ClipHeist';
+  const fromAddr = m ? m[2] : EMAIL_FROM.trim();
+  let res;
+  if (BREVO_KEY) {
+    res = await fetch(BREVO_API, {
+      method: 'POST',
+      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        sender: { name: fromName, email: fromAddr },
+        replyTo: { name: fromName, email: fromAddr },
+        to: [{ email: to }],
+        subject, textContent: text, htmlContent: html,
+      }),
+    });
+  } else {
+    res = await fetch(EMAIL_API, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${EMAIL_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+      body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, text, html }),
+    });
+  }
+  if (!res.ok) throw new Error(`email API ${res.status}: ${(await res.text()).slice(0, 200)}`);
+}
+
 const emailed = new Set();
 async function emailLink(session) {
   const to = session.customer_details?.email;
@@ -118,12 +150,9 @@ async function emailLink(session) {
   const link = `${BASE_URL}/download?t=${encodeURIComponent(makeToken(session.id))}`;
   const key = licenceFor(session.id);
   try {
-    const res = await fetch(EMAIL_API, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${EMAIL_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': `clipheist-${session.id}` },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [to],
+    await sendEmail({
+        to,
+        idempotencyKey: `clipheist-${session.id}`,
         subject: 'Your ClipHeist licence key and download',
         text: `Thanks for buying ClipHeist.
 
@@ -148,9 +177,7 @@ At checkout you asked for immediate access to this digital product and acknowled
 <p style="font-size:14px;color:#555">Run ClipHeist-Setup.exe. If Windows shows a "Windows protected your PC" notice, choose More info, then Run anyway.</p>
 <p style="font-size:13px;color:#777">Your key and link are unique to your order, so please don't share them.</p>
 <p style="font-size:13px;color:#777">At checkout you asked for immediate access to this digital product and acknowledged that the 14-day right to cancel ends once it is supplied. If the app is faulty, reply to this email and we will put it right.</p></div>`,
-      }),
     });
-    if (!res.ok) throw new Error(`email API ${res.status}: ${(await res.text()).slice(0, 200)}`);
   } catch (e) {
     emailed.delete(session.id);
     throw e;
@@ -258,10 +285,7 @@ ${note}
       if (!SECRET || !checkToken(url.searchParams.get('t'))) {
         return send(res, 403, page('Link expired', `<h1>This download link isn't valid</h1><p>Links last ${LINK_DAYS} days. Reply to your Stripe receipt email and we'll send a fresh one.</p>`));
       }
-      if (!LICENSE_PRIVATE_KEY) console.log('Activation is OFF: LICENSE_PRIVATE_KEY missing from .env');
-  if (!emailReady()) console.log('Email is OFF: set RESEND_API_KEY and EMAIL_FROM in .env');
-  if (!WEBHOOK_SECRET) console.log('Webhook is OFF: set STRIPE_WEBHOOK_SECRET (emails then only send when the buyer reaches the thank-you page)');
-  if (/^https:\/\//.test(INSTALLER_URL)) { res.writeHead(302, { Location: INSTALLER_URL, 'Cache-Control': 'no-store' }); return res.end(); }
+      if (/^https:\/\//.test(INSTALLER_URL)) { res.writeHead(302, { Location: INSTALLER_URL, 'Cache-Control': 'no-store' }); return res.end(); }
       if (!fs.existsSync(INSTALLER)) return send(res, 500, page('Oops', `<h1>The installer is missing on the server</h1><p>Please contact support. Your purchase is safe.</p>`));
       res.writeHead(200, {
         'Content-Type': 'application/octet-stream',
@@ -297,7 +321,8 @@ if (process.argv[2] === 'issue') {
 server.listen(PORT, () => {
   console.log(`ClipHeist site on ${BASE_URL}`);
   if (!configured()) console.log('Checkout is OFF: set STRIPE_SECRET_KEY and DOWNLOAD_SECRET in .env');
-  if (!emailReady()) console.log('Email is OFF: set RESEND_API_KEY and EMAIL_FROM in .env');
+  if (!LICENSE_PRIVATE_KEY) console.log('Activation is OFF: LICENSE_PRIVATE_KEY is not set');
+  if (!emailReady()) console.log('Email is OFF: set BREVO_API_KEY (or RESEND_API_KEY) and EMAIL_FROM');
   if (!WEBHOOK_SECRET) console.log('Webhook is OFF: set STRIPE_WEBHOOK_SECRET (emails then only send when the buyer reaches the thank-you page)');
   if (!INSTALLER_URL && !fs.existsSync(INSTALLER)) console.log('Installer not found at', INSTALLER);
 });
