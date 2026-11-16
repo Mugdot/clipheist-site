@@ -23,9 +23,5 @@ services:
         sync: false
       - key: LICENSE_PRIVATE_KEY
         sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: RESEND_API_KEY
-        sync: false
-      - key: EMAIL_FROM
-        sync: false
+      # Add later in the Render dashboard (Environment tab) when you set up email:
+      # STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, EMAIL_FROM
