@@ -32,7 +32,7 @@ const emailReady = () => !!((EMAIL_KEY || BREVO_KEY) && EMAIL_FROM);
 const PUBLIC = path.join(__dirname, 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
 
-const configured = () => STRIPE_KEY.startsWith('sk_') && SECRET.length >= 16;
+const configured = () => /^(sk|rk)_/.test(STRIPE_KEY) && SECRET.length >= 16;
 
 async function stripe(method, route, params) {
   const res = await fetch('https://api.stripe.com/v1' + route, {
