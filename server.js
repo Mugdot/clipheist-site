@@ -87,7 +87,7 @@ function saveActivations() {
 }
 function activate(key, device) {
   const id = SECRET && parseLicence(key);
-  if (!id) return { ok: false, error: 'That licence key is not valid. Check it against your email.' };
+  if (!id) return { ok: false, error: 'That licence key is not valid. Check it against the key on your order page.' };
   if (!/^[a-f0-9]{32,64}$/.test(device || '')) return { ok: false, error: 'Bad request.' };
   const rec = activations[id] || (activations[id] = { devices: [] });
   if (rec.revoked) return { ok: false, error: 'This licence key has been disabled.' };
