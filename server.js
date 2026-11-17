@@ -18,6 +18,7 @@ const INSTALLER_URL = process.env.INSTALLER_URL || ''; // optional: installer ho
 const INSTALLER = path.resolve(__dirname, process.env.INSTALLER_PATH || 'downloads/ClipHeist-Setup.exe');
 const PRICE_PENCE = 499;
 const LINK_DAYS = 7;
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'boneboxgame@gmail.com';
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const EMAIL_KEY = process.env.RESEND_API_KEY || '';
 const EMAIL_FROM = process.env.EMAIL_FROM || '';
@@ -204,7 +205,7 @@ function readBody(req, limit = 1e6) {
 function page(title, inner) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title} · ClipHeist</title><link rel="stylesheet" href="/style.css"></head><body><main class="narrow">
-<a class="brand" href="/"><span class="mark"></span>Clip<b>Heist</b></a>${inner}</main></body></html>`;
+<a class="brand" href="${SITE_URL}/"><span class="mark"></span>Clip<b>Heist</b></a>${inner}${SUPPORT_EMAIL ? `<p class="help">Need help? Email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></p>` : ''}</main></body></html>`;
 }
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'X-Content-Type-Options': 'nosniff', ...headers });
@@ -217,10 +218,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/buy') {
       const form = new URLSearchParams(await readBody(req, 2000));
       if (form.get('consent') !== 'yes') {
-        return send(res, 400, page('One more thing', `<h1>Please tick the box first</h1><p>We need your OK to deliver the download straight away.</p><a class="btn" href="/#buy">Back</a>`));
+        return send(res, 400, page('One more thing', `<h1>Please tick the box first</h1><p>We need your OK to deliver the download straight away.</p><a class="btn" href="${SITE_URL}/#buy">Back</a>`));
       }
       if (!configured()) {
-        return send(res, 503, page('Not open yet', `<h1>Checkout isn't switched on yet</h1><p>The shop owner still needs to add their Stripe keys. Nothing has been charged.</p><a class="btn" href="/">Back</a>`));
+        return send(res, 503, page('Not open yet', `<h1>Checkout isn't switched on yet</h1><p>The shop owner still needs to add their Stripe keys. Nothing has been charged.</p><a class="btn" href="${SITE_URL}/">Back</a>`));
       }
       const session = await stripe('POST', '/checkout/sessions', {
         mode: 'payment',
@@ -241,7 +242,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url.pathname === '/api/activate') {
       const json = (status, obj) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
-      if (limited(req.socket.remoteAddress)) return json(429, { ok: false, error: 'Too many attempts. Wait a minute and try again.' });
+      if (limited(String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress)) return json(429, { ok: false, error: 'Too many attempts. Wait a minute and try again.' });
       if (!SECRET || !LICENSE_PRIVATE_KEY) return json(503, { ok: false, error: 'Activation is not available right now.' });
       let body = {};
       try { body = JSON.parse(await readBody(req, 2000)); } catch {}
@@ -262,10 +263,10 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && url.pathname === '/thanks') {
       const id = url.searchParams.get('session_id') || '';
-      if (!configured() || !/^cs_[A-Za-z0-9_]+$/.test(id)) return send(res, 400, page('Hmm', `<h1>We couldn't find that order</h1><a class="btn" href="/">Back</a>`));
+      if (!configured() || !/^cs_[A-Za-z0-9_]+$/.test(id)) return send(res, 400, page('Hmm', `<h1>We couldn't find that order</h1><a class="btn" href="${SITE_URL}/">Back</a>`));
       const session = await stripe('GET', `/checkout/sessions/${id}`);
       if (session.payment_status !== 'paid') {
-        return send(res, 402, page('Payment pending', `<h1>Payment not completed</h1><p>You haven't been charged. You can try again.</p><a class="btn" href="/#buy">Try again</a>`));
+        return send(res, 402, page('Payment pending', `<h1>Payment not completed</h1><p>You haven't been charged. You can try again.</p><a class="btn" href="${SITE_URL}/#buy">Try again</a>`));
       }
       const link = `/download?t=${encodeURIComponent(makeToken(id))}`;
       let sent = false;
@@ -273,17 +274,20 @@ const server = http.createServer(async (req, res) => {
       const email = session.customer_details?.email;
       const note = sent
         ? `<p>We've emailed your licence key and download link to <b>${esc(email)}</b>. Check spam if it isn't there in a couple of minutes.</p>`
-        : `<p>Save your licence key now. You'll need it when you first open the app.</p>`;
+        : `<p><b>Save your licence key now.</b> You'll need it when you first open the app, and this page is the only place it is shown. Bookmark this page too: it will show your key again.</p>`;
+      const keyFile = 'data:text/plain;charset=utf-8,' + encodeURIComponent(['ClipHeist licence key: ' + licenceFor(id), 'Download: ' + (INSTALLER_URL || BASE_URL), SUPPORT_EMAIL ? 'Help: ' + SUPPORT_EMAIL : ''].join(String.fromCharCode(13, 10)));
       return send(res, 200, page('Thank you', `<h1>You're in. Download ClipHeist.</h1>
 ${note}
-<p class="key">${licenceFor(id)}</p>
+<p class="key" id="key">${licenceFor(id)}</p>
+<p class="keyrow"><button class="btn small ghost" id="copy" type="button">Copy key</button><a class="btn small ghost" id="save" download="ClipHeist-licence-key.txt" href="${keyFile}">Save key as a file</a></p>
 <a class="btn" href="${link}">Download for Windows</a>
+<script>document.getElementById('copy').onclick=function(){navigator.clipboard.writeText(document.getElementById('key').textContent).then(()=>{this.textContent='Copied'})}</script>
 <ol class="steps"><li>Run <b>ClipHeist-Setup.exe</b>. Windows may show a "Windows protected your PC" notice for new apps: choose <b>More info → Run anyway</b>.</li><li>Open ClipHeist and enter your licence key. It works on up to ${MAX_DEVICES} PCs.</li><li>Paste a clip link and hit <b>Grab clip</b>.</li><li>Generate captions, style them, check the score, export.</li></ol>`), { 'Cache-Control': 'no-store' });
     }
 
     if (req.method === 'GET' && url.pathname === '/download') {
       if (!SECRET || !checkToken(url.searchParams.get('t'))) {
-        return send(res, 403, page('Link expired', `<h1>This download link isn't valid</h1><p>Links last ${LINK_DAYS} days. Reply to your Stripe receipt email and we'll send a fresh one.</p>`));
+        return send(res, 403, page('Link expired', `<h1>This download link isn't valid</h1><p>Download links last ${LINK_DAYS} days. Open your order page again from your bookmark, or contact us and we'll sort it out.</p>`));
       }
       if (/^https:\/\//.test(INSTALLER_URL)) { res.writeHead(302, { Location: INSTALLER_URL, 'Cache-Control': 'no-store' }); return res.end(); }
       if (!fs.existsSync(INSTALLER)) return send(res, 500, page('Oops', `<h1>The installer is missing on the server</h1><p>Please contact support. Your purchase is safe.</p>`));
@@ -296,6 +300,11 @@ ${note}
       return fs.createReadStream(INSTALLER).pipe(res);
     }
 
+    if (req.method === 'GET' && url.pathname === '/health') {
+      res.writeHead(200, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' });
+      return res.end('ok');
+    }
+
     if (req.method === 'GET') {
       const rel = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
       const file = path.join(PUBLIC, path.normalize(rel));
@@ -304,10 +313,10 @@ ${note}
         return fs.createReadStream(file).pipe(res);
       }
     }
-    send(res, 404, page('Not found', `<h1>Page not found</h1><a class="btn" href="/">Home</a>`));
+    send(res, 404, page('Not found', `<h1>Page not found</h1><a class="btn" href="${SITE_URL}/">Home</a>`));
   } catch (e) {
     console.error(e);
-    send(res, 500, page('Error', `<h1>Something went wrong</h1><p>You have not been charged twice. Please try again in a moment.</p><a class="btn" href="/">Home</a>`));
+    send(res, 500, page('Error', `<h1>Something went wrong</h1><p>You have not been charged twice. Please try again in a moment.</p><a class="btn" href="${SITE_URL}/">Home</a>`));
   }
 });
 

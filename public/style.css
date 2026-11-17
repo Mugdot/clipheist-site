@@ -76,3 +76,15 @@ footer { border-top: 1px solid var(--line); padding: 28px clamp(16px, 5vw, 64px)
 .buyform { display: grid; gap: 18px; justify-items: center; }
 .consent { display: flex; gap: 10px; align-items: flex-start; text-align: left; max-width: 34em; color: var(--mute); font-size: 15px; cursor: pointer; }
 .consent input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--pink); flex: none; }
+
+.btn.ghost { background: none; color: var(--text); border: 1px solid var(--line); box-shadow: none; }
+.btn.ghost:hover { border-color: var(--pink); box-shadow: none; }
+.keyrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: -8px; }
+.help { margin-top: 40px; font-size: 14px; }
+.wait { color: var(--orange) !important; font-size: 15px; max-width: 30em; }
+.btn:disabled { filter: grayscale(.6); opacity: .7; cursor: progress; transform: none; }
+footer a, .legal a:not(.btn), .faq a { color: var(--orange); }
+footer p + p { margin-top: 8px; }
+.legal h2 { font-size: 22px; margin: 34px 0 10px; }
+.legal p { margin-bottom: 12px; font-size: 16px; }
+.legal b { color: var(--text); }

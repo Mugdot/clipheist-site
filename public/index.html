@@ -4,12 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ClipHeist · Turn any clip link into a ready-to-post short</title>
-<meta name="description" content="Paste a YouTube, TikTok, Instagram or Twitch link. Get an MP4, add custom captions, see a potential score with titles and tags. £4.99 once.">
-<link rel="stylesheet" href="/style.css">
+<meta name="description" content="Paste a YouTube, TikTok, Instagram or Twitch link. Get an MP4, add custom captions, see a potential score with titles and tags. £4.99 once, for Windows.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ClipHeist · Link in. Viral-ready clip out.">
+<meta property="og:description" content="Clip link to captioned, scored, ready-to-post short. £4.99 once, for Windows. No subscription, no watermark.">
+<meta property="og:image" content="https://mugdot.github.io/clipheist/og.png">
+<meta property="og:url" content="https://mugdot.github.io/clipheist/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="/"><span class="mark"></span>Clip<b>Heist</b></a>
+  <a class="brand" href="./"><span class="mark"></span>Clip<b>Heist</b></a>
   <nav><a href="#how">How it works</a><a href="#features">Features</a><a href="#faq">FAQ</a><a class="btn small" href="#buy">Get it · £4.99</a></nav>
 </header>
 
@@ -19,7 +26,7 @@
     <h1>Link in. <span>Viral-ready clip</span> out.</h1>
     <p class="lead">Paste a YouTube, TikTok, Instagram or Twitch link. ClipHeist pulls the MP4, writes the captions, lets you style every detail and scores the clip before you post.</p>
     <div class="cta">
-      <a class="btn" href="#buy">Download for Windows · £4.99</a>
+      <a class="btn" href="#buy">Get it for Windows · £4.99</a>
       <span>One payment. No subscription. No watermark.</span>
     </div>
   </div>
@@ -48,31 +55,52 @@
     <article><h3>Titles and tags, ready to paste</h3><p>Title ideas built from what's actually said in the clip, plus a tag set tuned to your niche keywords. One click copies.</p></article>
     <article><h3>Vertical, square or original</h3><p>Reframe landscape gameplay to 9:16 with a blurred background or a crop-to-fill. Trim the start and end to the exact moment.</p></article>
     <article><h3>Hook headline banner</h3><p>Add a bold line at the top of the clip for the first seconds, the easiest way to stop the scroll.</p></article>
-    <article><h3>Private and offline-friendly</h3><p>Captions and rendering run on your machine. Your clips are never uploaded to us, and there are no credits or limits.</p></article>
+    <article><h3>Private by design</h3><p>Captions and rendering run on your machine. Your clips are never uploaded to us, and there are no credits or limits.</p></article>
   </div>
 </section>
 
 <section id="buy" class="band buy">
   <h2>£4.99. Once.</h2>
   <p>Full app for Windows 10 and 11. Unlimited clips, no watermark, no account.</p>
-  <form method="post" action="/buy" class="buyform">
+  <form method="post" action="https://clipheist-site.onrender.com/buy" class="buyform" id="buyform">
     <label class="consent"><input type="checkbox" name="consent" value="yes" required> I want my download and licence key straight away, and I understand my 14-day right to cancel ends once they're delivered.</label>
-    <button class="btn big" type="submit">Buy and download</button>
+    <button class="btn big" type="submit" id="buybtn">Buy and download</button>
+    <p class="wait" id="wait" hidden>Opening secure checkout. This can take up to a minute the first time, please don't close the page.</p>
   </form>
-  <p class="fine">Secure checkout by Stripe. Your licence key and download link arrive by email in seconds. One key activates the app on up to 2 PCs. If the app is faulty, email us and we'll put it right.</p>
+  <p class="fine"><b>Windows PC only</b>, not phones, Mac or consoles. Secure checkout by Stripe. Your licence key and download appear on screen straight after payment, so save the key when you see it. One key activates the app on up to 2 PCs. If the app is faulty, email us and we'll put it right.</p>
 </section>
 
 <section id="faq" class="band faq">
   <h2>Questions</h2>
-  <details><summary>Which links work?</summary><p>Public YouTube videos and Shorts, TikTok videos, Instagram Reels and posts, and Twitch clips and VODs. Private or login-only content won't download.</p></details>
-  <details><summary>Do I need a powerful PC?</summary><p>No. Captioning a 30-second clip takes well under a minute on a typical laptop. The first run downloads a speech model once.</p></details>
+  <details><summary>How do I get the app after paying?</summary><p>As soon as payment completes you land on a page with your licence key and the download button. Copy or save the key, install the app, and enter the key the first time you open it.</p></details>
+  <details><summary>I lost my licence key</summary><p>Reopen your order page if you bookmarked it. Otherwise email <a href="mailto:boneboxgame@gmail.com">boneboxgame@gmail.com</a> from the address you paid with and we'll send it again.</p></details>
+  <details><summary>Which links work?</summary><p>Public YouTube videos and Shorts, TikTok videos, Instagram Reels and posts, and Twitch clips and VODs. Private or login-only content won't download. Sites change often, so the app updates its downloader automatically.</p></details>
+  <details><summary>Windows says "Windows protected your PC"</summary><p>That notice appears for new apps from small developers. Choose <b>More info</b>, then <b>Run anyway</b>. Some antivirus tools also check a new app on its first launch; if it asks for your key a second time, just enter it again.</p></details>
+  <details><summary>Do I need a powerful PC?</summary><p>No. Captioning a 30-second clip takes well under a minute on a typical laptop. The first run downloads a speech model once. Captions are tuned for English; other languages can be chosen in the app.</p></details>
   <details><summary>Is the score accurate?</summary><p>It measures things known to matter for short-form: how fast the hook lands, pacing, length, captions and format. It can't know the algorithm or your audience, so treat it as editing guidance.</p></details>
   <details><summary>Can I post any clip I download?</summary><p>Only post content you have the right to use: your own, or clips from creators who allow it, such as official clipping programmes. You're responsible for following each platform's terms and copyright law.</p></details>
-  <details><summary>Mac version?</summary><p>Windows only for now.</p></details>
+  <details><summary>Mac or phone version?</summary><p>Windows only for now.</p></details>
 </section>
 
 <footer>
+  <p><a href="terms.html">Terms, refunds and privacy</a> · Contact: <a href="mailto:boneboxgame@gmail.com">boneboxgame@gmail.com</a></p>
   <p>© ClipHeist. An independent tool, not affiliated with or endorsed by YouTube, TikTok, Instagram, Twitch, Rockstar Games or Take-Two Interactive.</p>
 </footer>
+
+<script>
+// The checkout server sleeps when idle. Wake it as soon as the page opens so it is ready by the time someone clicks Buy.
+const CHECKOUT_SERVER = 'https://clipheist-site.onrender.com';
+fetch(CHECKOUT_SERVER + '/health', { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+document.getElementById('buyform').addEventListener('submit', () => {
+  const btn = document.getElementById('buybtn');
+  btn.textContent = 'Opening checkout…';
+  setTimeout(() => { btn.disabled = true; document.getElementById('wait').hidden = false; }, 50);
+});
+// Restore the button if the visitor comes back from Stripe with the back button.
+window.addEventListener('pageshow', () => {
+  const btn = document.getElementById('buybtn');
+  btn.disabled = false; btn.textContent = 'Buy and download'; document.getElementById('wait').hidden = true;
+});
+</script>
 </body>
 </html>

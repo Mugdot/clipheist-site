@@ -14,6 +14,8 @@ services:
         value: https://mugdot.github.io/clipheist
       - key: INSTALLER_URL
         value: https://github.com/Mugdot/clipheist-download/releases/latest/download/ClipHeist-Setup.exe
+      - key: SUPPORT_EMAIL
+        value: boneboxgame@gmail.com
       - key: MAX_DEVICES
         value: "2"
       # Secrets: Render asks you to type these in when you deploy. Copy them from your local .env file.
